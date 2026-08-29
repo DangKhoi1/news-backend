@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -31,17 +32,36 @@ export class CommentsService {
     try {
       const safePage = Math.max(page, 1);
       const safeLimit = Math.min(Math.max(limit, 1), 100);
-      const [items, total] = await this.comments.findAndCount({
-        where: {
-          articleId,
+      const [items, total] = await this.comments
+        .createQueryBuilder('comment')
+        .leftJoinAndSelect('comment.user', 'user')
+        .leftJoinAndSelect(
+          'comment.replies',
+          'reply',
+          'reply.status = :replyStatus',
+          { replyStatus: CommentStatus.APPROVED },
+        )
+        .leftJoinAndSelect('reply.user', 'replyUser')
+        .select([
+          'comment',
+          'user.id',
+          'user.displayName',
+          'user.avatarUrl',
+          'reply',
+          'replyUser.id',
+          'replyUser.displayName',
+          'replyUser.avatarUrl',
+        ])
+        .where('comment.articleId = :articleId', { articleId })
+        .andWhere('comment.status = :status', {
           status: CommentStatus.APPROVED,
-          parentId: IsNull(),
-        },
-        relations: { user: true, replies: { user: true } },
-        order: { createdAt: 'DESC', replies: { createdAt: 'ASC' } },
-        skip: (safePage - 1) * safeLimit,
-        take: safeLimit,
-      });
+        })
+        .andWhere('comment.parentId IS NULL')
+        .orderBy('comment.createdAt', 'DESC')
+        .addOrderBy('reply.createdAt', 'ASC')
+        .skip((safePage - 1) * safeLimit)
+        .take(safeLimit)
+        .getManyAndCount();
       return {
         items,
         page: safePage,
@@ -65,18 +85,26 @@ export class CommentsService {
       if (!article) throw new NotFoundException('Không tìm thấy bài viết');
       if (!article.allowComments)
         throw new ForbiddenException('Bài viết đã tắt bình luận');
+      const content = this.normalizeContent(dto.content);
       if (dto.parentId) {
         const parent = await this.comments.findOne({
-          where: { id: dto.parentId, articleId },
+          where: {
+            id: dto.parentId,
+            articleId,
+            parentId: IsNull(),
+            status: CommentStatus.APPROVED,
+          },
         });
         if (!parent)
-          throw new NotFoundException('Không tìm thấy bình luận cha');
+          throw new NotFoundException(
+            'Không tìm thấy bình luận cha đã được duyệt',
+          );
       }
       return await this.comments.save(
         this.comments.create({
           articleId,
           userId: user.id,
-          content: dto.content.trim(),
+          content,
           parentId: dto.parentId ?? null,
           status: CommentStatus.PENDING,
         }),
@@ -95,7 +123,7 @@ export class CommentsService {
       if (!comment) throw new NotFoundException('Không tìm thấy bình luận');
       if (comment.userId !== user.id && user.role !== UserRole.ADMIN)
         throw new ForbiddenException('Bạn không thể sửa bình luận này');
-      comment.content = dto.content.trim();
+      comment.content = this.normalizeContent(dto.content);
       comment.status = CommentStatus.PENDING;
       return await this.comments.save(comment);
     } catch (error: unknown) {
@@ -121,6 +149,20 @@ export class CommentsService {
       await this.comments.remove(comment);
     } catch (error: unknown) {
       rethrowServiceError(error, this.logger, 'remove');
+    }
+  }
+
+  private normalizeContent(value: string): string {
+    try {
+      const content = value.trim();
+      if (content.length < 2)
+        throw new BadRequestException(
+          'Bình luận phải có ít nhất 2 ký tự nội dung',
+        );
+      return content;
+    } catch (error: unknown) {
+      if (error instanceof BadRequestException) throw error;
+      return rethrowServiceError(error, this.logger, 'normalizeContent');
     }
   }
 }

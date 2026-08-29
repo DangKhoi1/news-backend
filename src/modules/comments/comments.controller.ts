@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -22,7 +23,7 @@ import { UpdateCommentDto } from './dto/update-comment.dto';
 export class CommentsController {
   constructor(private readonly service: CommentsService) {}
   @Public() @Get('article/:articleId') async list(
-    @Param('articleId') articleId: string,
+    @Param('articleId', new ParseUUIDPipe({ version: '4' })) articleId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ): Promise<{ data: unknown }> {
@@ -33,7 +34,7 @@ export class CommentsController {
     }
   }
   @Post('article/:articleId') async create(
-    @Param('articleId') articleId: string,
+    @Param('articleId', new ParseUUIDPipe({ version: '4' })) articleId: string,
     @Body() dto: CreateCommentDto,
     @CurrentUser() user: AuthUser,
   ): Promise<{ message: string; data: unknown }> {
@@ -47,7 +48,7 @@ export class CommentsController {
     }
   }
   @Patch(':id') async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: UpdateCommentDto,
     @CurrentUser() user: AuthUser,
   ): Promise<{ message: string; data: unknown }> {
@@ -61,7 +62,7 @@ export class CommentsController {
     }
   }
   @Roles(UserRole.EDITOR, UserRole.ADMIN) @Patch(':id/moderate') async moderate(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: ModerateCommentDto,
   ): Promise<{ message: string; data: unknown }> {
     try {
@@ -74,7 +75,7 @@ export class CommentsController {
     }
   }
   @Delete(':id') async remove(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @CurrentUser() user: AuthUser,
   ): Promise<{ message: string; data: null }> {
     try {

@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
@@ -8,16 +9,21 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "target": "ES2022",
+    "lib": ["ES2022"],
     "sourceMap": true,
+    "rootDir": "./src",
     "outDir": "./dist",
-    "baseUrl": "./",
     "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "skipLibCheck": true,
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
-    "paths": { "@/*": ["src/*"] }
-  }
+    "paths": { "@/*": ["./src/*"] },
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }
