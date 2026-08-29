@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Compiled output and test coverage
+dist/
+coverage/
+
+# Environment files (keep the example template)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript and tooling caches
+*.tsbuildinfo
+.eslintcache
+.cache/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
