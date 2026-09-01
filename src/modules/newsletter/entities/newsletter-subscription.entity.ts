@@ -12,6 +12,8 @@ export class NewsletterSubscription {
   @Index({ unique: true }) @Column({ length: 180 }) email: string;
   @Column({ default: true }) isActive: boolean;
   @Column({ length: 64, unique: true }) unsubscribeToken: string;
+  @Column({ type: 'timestamptz', nullable: true })
+  lastDigestSentAt: Date | null;
   @CreateDateColumn({ type: 'timestamptz' }) createdAt: Date;
   @UpdateDateColumn({ type: 'timestamptz' }) updatedAt: Date;
 }

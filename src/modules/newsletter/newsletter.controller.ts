@@ -48,4 +48,17 @@ export class NewsletterController {
       throw error;
     }
   }
+  @Roles(UserRole.ADMIN) @Post('send-now') async sendNow(): Promise<{
+    message: string;
+    data: unknown;
+  }> {
+    try {
+      return {
+        message: 'Đã xử lý yêu cầu gửi bản tin',
+        data: await this.service.sendDailyDigest(),
+      };
+    } catch (error: unknown) {
+      throw error;
+    }
+  }
 }
